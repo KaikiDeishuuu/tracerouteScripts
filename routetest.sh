@@ -202,11 +202,11 @@ main() {
         OUTPUT_FILE="result_${SAFE_TARGET}_${TIMESTAMP}.json"
         ARGS+=("-o" "$OUTPUT_FILE")
         echo -e "${BLUE}结果将保存到: $OUTPUT_FILE${NC}\n"
-    $PYTHON_CMD
+    fi
     
     # 执行Python脚本
     echo -e "${GREEN}开始测试目标: $TARGET${NC}\n"
-    python3 "$PYTHON_SCRIPT" "$TARGET" "${ARGS[@]}"
+    $PYTHON_CMD "$PYTHON_SCRIPT" "$TARGET" "${ARGS[@]}"
     
     EXIT_CODE=$?
     
