@@ -45,18 +45,47 @@ chmod +x install.sh
 - 检测系统类型（Ubuntu/Debian/CentOS/Arch等）
 - 安装系统依赖（python3, traceroute, iperf3）
 - 安装Python依赖（requests）
+- 自动处理Python 3.11+的externally-managed-environment问题
+- 必要时自动创建虚拟环境
 - 设置脚本权限
 - 可选创建全局命令 `routetest`
+
+**注意**: 在较新的Debian/Ubuntu系统（Python 3.11+），安装脚本会自动创建虚拟环境以避免系统包管理冲突。
 
 ### 手动安装
 
 #### 1. 安装Python依赖
 
+**Python 3.11+系统（推荐使用虚拟环境）：**
+
+如果遇到 `externally-managed-environment` 错误，使用虚拟环境：
+
 ```bash
-pip3 install requests
-# 或
-pip3 install -r requirements.txt
+# 安装虚拟环境支持
+sudo apt install -y python3-full python3-venv
+
+# 创建虚拟环境
+python3 -m venv venv
+
+# 激活虚拟环境
+source venv/bin/activate
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 使用完后可以停用
+deactivate
 ```
+
+**旧版Python系统：**
+
+```bash
+pip3 install --user requests
+# 或
+pip3 install --user -r requirements.txt
+```
+
+**注意**: `routetest.sh` 脚本会自动检测并使用虚拟环境（如果存在）。
 
 #### 2. 安装系统依赖
 

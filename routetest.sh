@@ -20,8 +20,15 @@ if [ ! -f "$PYTHON_SCRIPT" ]; then
     exit 1
 fi
 
+# 确定使用的Python命令（优先使用虚拟环境）
+PYTHON_CMD="python3"
+if [ -d "$SCRIPT_DIR/venv" ]; then
+    PYTHON_CMD="$SCRIPT_DIR/venv/bin/python"
+    echo -e "${BLUE}使用虚拟环境中的Python${NC}"
+fi
+
 # 检查是否安装了Python3
-if ! command -v python3 &> /dev/null; then
+if ! command -v python3 &> /dev/null && [ ! -f "$SCRIPT_DIR/venv/bin/python" ]; then
     echo -e "${RED}错误: 未安装 python3${NC}"
     echo "请安装Python3: sudo apt install python3 python3-pip"
     exit 1
@@ -32,9 +39,13 @@ check_dependencies() {
     local missing_deps=0
     
     # 检查requests库
-    if ! python3 -c "import requests" &> /dev/null; then
+    if ! $PYTHON_CMD -c "import requests" &> /dev/null; then
         echo -e "${YELLOW}警告: 未安装 requests 库${NC}"
-        echo "运行: pip3 install requests"
+        echo "运行安装脚本: ./install.sh"
+        echo "或手动创建虚拟环境:"
+        echo "  python3 -m venv venv"
+        echo "  source venv/bin/activate"
+        echo "  pip install requests"
         missing_deps=1
     fi
     
@@ -191,7 +202,7 @@ main() {
         OUTPUT_FILE="result_${SAFE_TARGET}_${TIMESTAMP}.json"
         ARGS+=("-o" "$OUTPUT_FILE")
         echo -e "${BLUE}结果将保存到: $OUTPUT_FILE${NC}\n"
-    fi
+    $PYTHON_CMD
     
     # 执行Python脚本
     echo -e "${GREEN}开始测试目标: $TARGET${NC}\n"

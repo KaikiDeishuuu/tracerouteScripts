@@ -99,12 +99,52 @@ install_system_deps() {
 install_python_deps() {
     echo -e "${GREEN}[2/4] 安装Python依赖...${NC}"
     
-    if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
-        pip3 install --user -r "$SCRIPT_DIR/requirements.txt"
-        echo -e "${GREEN}✓ Python依赖安装完成${NC}\n"
+    # 检查是否需要使用虚拟环境（Python 3.11+的externally-managed-environment问题）
+    local use_venv=0
+    
+    # 尝试直接安装，如果失败则使用虚拟环境
+    if ! pip3 install --user requests &>/dev/null; then
+        echo -e "${YELLOW}检测到externally-managed-environment限制${NC}"
+        echo -e "${BLUE}将创建虚拟环境...${NC}"
+        use_venv=1
+    fi
+    
+    if [ $use_venv -eq 1 ]; then
+        # 确保安装了python3-venv
+        case $OS in
+            ubuntu|debian)
+                $SUDO apt install -y python3-full python3-venv
+                ;;
+            centos|rhel|fedora)
+                $SUDO yum install -y python3-virtualenv
+                ;;
+            arch|manjaro)
+                # Arch默认支持venv
+                :
+                ;;
+        esac
+        
+        # 创建虚拟环境
+        echo "创建虚拟环境..."
+        python3 -m venv "$SCRIPT_DIR/venv"
+        
+        # 在虚拟环境中安装依赖
+        echo "在虚拟环境中安装依赖..."
+        if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
+            "$SCRIPT_DIR/venv/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
+        else
+            "$SCRIPT_DIR/venv/bin/pip" install requests
+        fi
+        
+        echo -e "${GREEN}✓ Python依赖已安装到虚拟环境${NC}"
+        echo -e "${BLUE}注意: 脚本将自动使用虚拟环境${NC}\n"
     else
-        echo -e "${YELLOW}未找到 requirements.txt，手动安装...${NC}"
-        pip3 install --user requests
+        # 使用--user安装
+        if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
+            pip3 install --user -r "$SCRIPT_DIR/requirements.txt"
+        else
+            pip3 install --user requests
+        fi
         echo -e "${GREEN}✓ Python依赖安装完成${NC}\n"
     fi
 }
@@ -168,8 +208,14 @@ verify_installation() {
         all_ok=0
     fi
     
-    # 检查requests
-    if python3 -c "import requests" &> /dev/null; then
+    # 检查requests（可能在虚拟环境中）
+    local python_cmd="python3"
+    if [ -f "$SCRIPT_DIR/venv/bin/python" ]; then
+        python_cmd="$SCRIPT_DIR/venv/bin/python"
+        echo -e "${BLUE}使用虚拟环境: $SCRIPT_DIR/venv${NC}"
+    fi
+    
+    if $python_cmd -c "import requests" &> /dev/null; then
         echo -e "${GREEN}✓ requests 库已安装${NC}"
     else
         echo -e "${RED}✗ requests 库未安装${NC}"
